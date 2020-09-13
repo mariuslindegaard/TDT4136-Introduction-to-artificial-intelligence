@@ -4,20 +4,26 @@ class Node():
         if parent is None:
             self.static_map = maze_map
             self.static_goal = tuple(goal)
-            self.path_dist = 0
         else:
             self.static_map = parent.static_map
             self.static_goal = parent.static_goal
-            self.path_dist = parent.path_dist + self.static_map[location]
         
-        self.parent = parent
         self.location = location
         self.id = self.location  # Unique id used in expand
-        self.priority = self.metric(self.location, self.static_goal) + self.path_dist
+
+        self.parent = parent
+        self._update_metrics()
 
         # Used for plotting:
         self._expanded = False
-        self._children = None
+        self._children = []
+    
+    def _update_metrics(self):
+        if self.parent is None:
+            self.path_dist = 0
+        else:
+            self.path_dist = self.parent.path_dist + self.static_map[self.location]
+        self.priority = self.metric(self.location, self.static_goal) + self.path_dist
     
     
     @staticmethod
@@ -48,3 +54,17 @@ class Node():
     @property
     def is_goal(self) -> bool:
         return self.location == self.static_goal
+
+
+    def propagate_path_enhancement(self, new_parent):
+        '''When an enhancing path is found, propagate to all children'''
+        assert self.parent.path_dist > new_parent.path_dist, "New path is not shorter when updating!"
+
+        self.parent = new_parent
+        self._update_metrics()
+
+        if new_parent in self._children:
+            self._children.remove(new_parent)
+
+        for child in self._children:
+            child.propagate_path_enhancement()

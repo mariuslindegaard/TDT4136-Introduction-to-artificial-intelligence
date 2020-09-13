@@ -69,6 +69,11 @@ class Map_Obj():
             goal_pos = [6, 36]
             end_goal_pos = [6, 7]
             path_to_map = folder + 'Samfundet_map_2.csv'
+        elif task == 0:  # My addiional test of path updates
+            start_pos = [1, 1]
+            goal_pos = [5, 1]
+            end_goal_pos = goal_pos
+            path_to_map = folder + 'myTest.csv'
 
         return start_pos, goal_pos, end_goal_pos, path_to_map
 
