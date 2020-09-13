@@ -68,5 +68,5 @@ class Node():
             self._children.remove(new_parent)
 
         for child in self._children:
-            child.propagate_path_enhancement()
+            child.propagate_path_enhancement(self)
     """
