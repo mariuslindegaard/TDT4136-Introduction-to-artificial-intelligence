@@ -25,6 +25,7 @@ def find_goal(start_node):
        
     Returns None if no path to goal was found.'''
     frontier = queue.PriorityQueue()  # The nodes at the frontier
+    expanded_ids = set()  # A set of id of all expanded nodes
     initialized_ids = set()  # A set of ids of all nodes in or behind frintier 
     
     enumeration = _inf_range()
@@ -33,10 +34,20 @@ def find_goal(start_node):
     this_node = start_node
 
     while not this_node.is_goal:
+        # Check that the node position is not already expanded, and if it is destroy this node
+        if this_node.id in expanded_ids and True:
+            print(f"Removed node at {this_node.id}")
+            this_node.parent._children.remove(this_node)
+            if frontier.empty():
+                return None
+            this_node = frontier.get()[-1]
+            continue
+
+        expanded_ids.add(this_node.id)
         print("Expanding node at", this_node.id,
               "with priority", this_node.priority)
-        # Expand to new nodes not yet initialized
-        new_nodes = this_node.expand(initialized_ids)
+        # Expand to new nodes not yet expanded
+        new_nodes = this_node.expand(expanded_ids)
         
         # Add new nodes to the frointier and initialized nodes
         for node in new_nodes:

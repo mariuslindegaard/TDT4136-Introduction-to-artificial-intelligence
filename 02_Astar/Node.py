@@ -56,6 +56,7 @@ class Node():
         return self.location == self.static_goal
 
 
+    """
     def propagate_path_enhancement(self, new_parent):
         '''When an enhancing path is found, propagate to all children'''
         assert self.parent.path_dist > new_parent.path_dist, "New path is not shorter when updating!"
@@ -68,3 +69,4 @@ class Node():
 
         for child in self._children:
             child.propagate_path_enhancement()
+    """

@@ -18,8 +18,9 @@ def prettyPlot(solved_maze: PathFinder.PathFinder):
 def task(i):
     map_obj = handout.Map.Map_Obj(task=i)
     
-    map_obj.show_map()
-    input("Enter to solve")
+    if i == 0:
+        map_obj.show_map()
+        input("Enter to solve")
     solver = PathFinder.PathFinder(map_obj.get_maps()[0], map_obj.start_pos, map_obj.goal_pos)
 
     print("Solution:\n", list(solver.solution_path))
