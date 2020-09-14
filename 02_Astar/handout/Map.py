@@ -1,8 +1,20 @@
 import numpy as np
 np.set_printoptions(threshold=np.inf, linewidth=300)
 import pandas as pd
-import time
+# import time
 from PIL import Image
+import glob
+
+def relPathTo(filename):
+    '''Finds the path to the file.
+
+    Necessary as my file structure is different from the handout'''
+    paths = glob.glob(f"**/{filename}", recursive=True)
+
+    assert len(paths) == 1, "There is not exactly one file with that name." \
+        f"Paths found: {paths}"
+
+    return paths[0]
 
 class Map_Obj():
     def __init__(self, task=1):
@@ -43,37 +55,37 @@ class Map_Obj():
         :param task: The task we are currently solving
         :return: Start position, Initial goal position, End goal position, path to map for current task.
         """
-        folder = "handout/"
+
         if task == 1:
             start_pos = [27, 18]
             goal_pos = [40, 32]
             end_goal_pos = goal_pos
-            path_to_map = folder + 'Samfundet_map_1.csv'
+            path_to_map = relPathTo('Samfundet_map_1.csv')
         elif task == 2:
             start_pos = [40, 32]
             goal_pos = [8, 5]
             end_goal_pos = goal_pos
-            path_to_map = folder + 'Samfundet_map_1.csv'
+            path_to_map = relPathTo('Samfundet_map_1.csv')
         elif task == 3:
             start_pos = [28, 32]
             goal_pos = [6, 32]
             end_goal_pos = goal_pos
-            path_to_map = folder + 'Samfundet_map_2.csv'
+            path_to_map = relPathTo('Samfundet_map_2.csv')
         elif task == 4:
             start_pos = [28, 32]
             goal_pos = [6, 32]
             end_goal_pos = goal_pos
-            path_to_map = folder + 'Samfundet_map_Edgar_full.csv'
+            path_to_map = relPathTo('Samfundet_map_Edgar_full.csv')
         elif task == 5:
             start_pos = [14, 18]
             goal_pos = [6, 36]
             end_goal_pos = [6, 7]
-            path_to_map = folder + 'Samfundet_map_2.csv'
+            path_to_map = relPathTo('Samfundet_map_2.csv')
         elif task == 0:  # My addiional test of path updates
             start_pos = [1, 1]
             goal_pos = [5, 1]
             end_goal_pos = goal_pos
-            path_to_map = folder + 'myTest.csv'
+            path_to_map = relPathTo('myTest.csv')
 
         return start_pos, goal_pos, end_goal_pos, path_to_map
 
