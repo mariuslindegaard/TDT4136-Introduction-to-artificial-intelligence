@@ -55,6 +55,7 @@ class Map_Obj():
         :param task: The task we are currently solving
         :return: Start position, Initial goal position, End goal position, path to map for current task.
         """
+        self.task = task
 
         if task == 1:
             start_pos = [27, 18]

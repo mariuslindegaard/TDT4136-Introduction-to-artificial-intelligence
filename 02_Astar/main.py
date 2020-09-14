@@ -5,8 +5,10 @@ def task(i):
     map_obj = handout.Map.Map_Obj(task=i)
     
     if i == 0:
+        print("Showing my own map")
         map_obj.show_map()
-        input("Enter to solve")
+        input("Press enter to solve")
+
     solver = PathFinder.PathFinder(map_obj.get_maps()[0], map_obj.start_pos, map_obj.goal_pos)
 
     print("Solution:\n", list(solver.solution_path))
@@ -17,10 +19,11 @@ def task(i):
     
 
 def main():
-    for i in range(0, 6):
-
+    for i in range(0, 5):
+        print(f'Running task {i}')
         task(i)
-        input(f"Enter for {i}")
+        input("Press enter to begin next task\n\n")
+
 
 if __name__ == '__main__':
     main()
