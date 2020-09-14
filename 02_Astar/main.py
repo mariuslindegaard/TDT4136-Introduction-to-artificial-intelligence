@@ -1,7 +1,5 @@
 import PathFinder
 import handout.Map
-import matplotlib.pyplot as plt
-import numpy as np
 
 def task(i):
     map_obj = handout.Map.Map_Obj(task=i)
