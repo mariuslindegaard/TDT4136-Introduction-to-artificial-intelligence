@@ -56,7 +56,7 @@ class CSP:
         and 'domain' is a list of the legal values for the variable.
         """
         self.variables.append(name)
-        self.domains[name] = list(domain)
+        self.domains[name] = set(domain)
         self.constraints[name] = {}
 
     @staticmethod
@@ -124,7 +124,7 @@ class CSP:
         return self.backtrack(assignment)
 
     @log_function
-    def backtrack(self, assignment: Dict[any, list]) -> Dict[any, list]:
+    def backtrack(self, assignment: Dict[any, set]) -> Dict[any, list]:
         """The function 'Backtrack' from the pseudocode in the
         textbook.
 
@@ -160,7 +160,7 @@ class CSP:
             # Consistency check is also handled in inference, but is done shallowly first for efficiency
             if self.is_consistent_with_assignment(var, val, assignment):
                 assignment_new = copy.deepcopy(assignment)
-                assignment_new[var] = [val]
+                assignment_new[var] = {val}
 
                 is_consistent = self.inference(assignment_new, self.get_all_arcs())  # Modifies assignment_new
                 if is_consistent:
@@ -170,7 +170,7 @@ class CSP:
 
         return {}
 
-    def is_consistent_with_assignment(self, var, val, assignment: Dict[any, list]):
+    def is_consistent_with_assignment(self, var, val, assignment: Dict[any, set]):
         """Checks whether assignment of val to var is consistent (shallowly)
 
         Only checks whether the assignment would allow the immediate neighbors to have an assignment as well, according
@@ -202,11 +202,11 @@ class CSP:
         return True
 
     @staticmethod
-    def order_domain_values(var, assignment: Dict[any, list]):
+    def order_domain_values(var, assignment: Dict[any, set]):
         return assignment[var]
 
     @staticmethod
-    def select_unassigned_variable(assignment: Dict[any, list]):
+    def select_unassigned_variable(assignment: Dict[any, set]):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
         in 'assignment' that have not yet been decided, i.e. whose list
@@ -227,7 +227,7 @@ class CSP:
 
         return low_var
 
-    def inference(self, assignment: Dict[any, list], queue: collections.deque) -> bool:
+    def inference(self, assignment: Dict[any, set], queue: collections.deque) -> bool:
         """The function 'AC-3' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
         the lists of legal values for each undecided variable. 'queue'
@@ -249,7 +249,7 @@ class CSP:
 
         return True
 
-    def revise(self, assignment: Dict[any, list], i, j) -> bool:
+    def revise(self, assignment: Dict[any, set], i, j) -> bool:
         """The function 'Revise' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
         the lists of legal values for each undecided variable. 'i' and
@@ -271,7 +271,7 @@ class CSP:
 
         # Evaluate where there are impossible values, and remove them if there are
         if unverified_domain:
-            assignment[i] = [val for val in assignment[i] if not (val in unverified_domain)]
+            assignment[i] = {val for val in assignment[i] if not (val in unverified_domain)}
             return True
         else:
             return False
@@ -331,7 +331,8 @@ def print_sudoku_solution(solution):
     """
     for row in range(9):
         for col in range(9):
-            print(f" {solution['%d-%d' % (row, col)][0]} ", end="")
+            (elem, ) = solution['%d-%d' % (row, col)]
+            print(f" {elem} ", end="")
             if col == 2 or col == 5:
                 print('|', end="")
         print("")
