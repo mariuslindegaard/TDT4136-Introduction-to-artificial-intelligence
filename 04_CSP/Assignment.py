@@ -1,5 +1,12 @@
 import copy
 import itertools
+import collections
+
+from typing import Dict, List
+
+
+class NoUnassignedVariablesError(Exception):
+    """No variables unassigned"""
 
 
 class CSP:
@@ -29,14 +36,14 @@ class CSP:
         """
         return itertools.product(a, b)
 
-    def get_all_arcs(self):
+    def get_all_arcs(self) -> collections.deque:
         """Get a list of all arcs/constraints that have been defined in
         the CSP. The arcs/constraints are represented as tuples (i, j),
         indicating a constraint between variable 'i' and 'j'.
         """
-        return [(i, j) for i in self.constraints for j in self.constraints[i]]
+        return collections.deque((i, j) for i in self.constraints for j in self.constraints[i])
 
-    def get_all_neighboring_arcs(self, var):
+    def get_all_neighboring_arcs(self, var) -> List[tuple]:
         """Get a list of all arcs/constraints going to/from variable
         'var'. The arcs/constraints are represented as in get_all_arcs().
         """
@@ -51,7 +58,7 @@ class CSP:
         to add the constraint the other way, j -> i, as all constraints
         are supposed to be two-way connections!
         """
-        if not j in self.constraints[i]:
+        if j not in self.constraints[i]:
             # First, get a list of all possible pairs of values between variables i and j
             self.constraints[i][j] = self.get_all_possible_pairs(self.domains[i], self.domains[j])
 
@@ -75,6 +82,7 @@ class CSP:
         # domains of the CSP variables. The deep copy is required to
         # ensure that any changes made to 'assignment' does not have any
         # side effects elsewhere.
+        assert self.variables, "There are no variables to solve for. The CSP might not be initialized"
         assignment = copy.deepcopy(self.domains)
 
         # Run AC-3 on all constraints in the CSP, to weed out all of the
@@ -84,7 +92,7 @@ class CSP:
         # Call backtrack with the partial assignment 'assignment'
         return self.backtrack(assignment)
 
-    def backtrack(self, assignment):
+    def backtrack(self, assignment: Dict[any, list]) -> Dict[any, list]:
         """The function 'Backtrack' from the pseudocode in the
         textbook.
 
@@ -108,28 +116,108 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-        # TODO: IMPLEMENT THIS
-        pass
 
-    def select_unassigned_variable(self, assignment):
+        # Try picking a new variable to "guess" (aka search)
+        # If there are no unassigned variables, we have solved the CSP :D
+        try:
+            var = self.select_unassigned_variable(assignment)
+        except NoUnassignedVariablesError:
+            return assignment
+
+        for val in self.order_domain_values(var, assignment):
+            # Consistency check is also handled in inference, but is done shallowly first for efficiency
+            if self.is_consistent_with_assignment(var, val, assignment):
+                assignment_new = copy.deepcopy(assignment)
+                assignment_new[var] = [val]
+
+                is_consistent = self.inference(assignment_new, self.get_all_arcs())  # Modifies assignment_new
+                if is_consistent:
+                    result = self.backtrack(assignment_new)
+                    if result:
+                        return result
+
+        return {}
+
+    def is_consistent_with_assignment(self, var, val, assignment: Dict[any, list]):
+        """Checks whether assignment of val to var is consistent (shallowly)
+
+        Only checks whether the assignment would allow the immediate neighbors to have an assignment as well, according
+        to 'self.constraints' and 'assignment'.
+
+        Does not modify assignment
+        """
+        # As AC-3 is implemented and used, this will always return True
+        """
+        old_val = copy.deepcopy(assignment[var])
+        assignment[var] = [val]
+
+        is_consistent = True
+        for neighbor in self.constraints[var].keys():
+
+            for (constr_val, constr_neighbor_val) in self.constraints[var][neighbor]:
+                if constr_val == val and constr_neighbor_val in assignment[neighbor]:
+                    break
+            else:
+                is_consistent = False
+                break
+            if not is_consistent:
+                print("Actually not consistent!")
+                break
+
+        assignment[var] = old_val
+        return is_consistent
+        """
+        return True
+
+
+    @staticmethod
+    def order_domain_values(var, assignment: Dict[any, list]):
+        return assignment[var]
+
+    def select_unassigned_variable(self, assignment: Dict[any, list]):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        # Selects the variable with the smallest domain
 
-    def inference(self, assignment, queue):
+        low_score, low_var = float("inf"), None
+
+        for var in assignment.keys():
+            if 1 < len(assignment[var]) < low_score:
+                low_score, low_var = len(assignment[var]), var
+
+        if low_score == float("inf"):
+            raise NoUnassignedVariablesError(
+                f"No variable with |domain|>1 found in the total of {len(assignment)} variables"
+            )
+
+        return low_var
+
+    def inference(self, assignment: Dict[any, list], queue: collections.deque) -> bool:
         """The function 'AC-3' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
         the lists of legal values for each undecided variable. 'queue'
         is the initial queue of arcs that should be visited.
-        """
-        # TODO: IMPLEMENT THIS
-        pass
 
-    def revise(self, assignment, i, j):
+        Modifies: assignment
+        """
+        assert type(queue) is collections.deque, \
+            "The queue inputted in 'inference' must be a collections.queue, not a {type(queue)}"
+
+        while queue:
+            i, j = queue.popleft()
+            if self.revise(assignment, i, j):
+                if not assignment[i]:
+                    return False
+
+                for neighbor in self.constraints[i].keys():
+                    queue.append((neighbor, i))
+
+        return True
+
+    def revise(self, assignment: Dict[any, list], i, j) -> bool:
         """The function 'Revise' from the pseudocode in the textbook.
         'assignment' is the current partial assignment, that contains
         the lists of legal values for each undecided variable. 'i' and
@@ -137,9 +225,24 @@ class CSP:
         found in variable i's domain that doesn't satisfy the constraint
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
+
+        Modifies: assignment
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        # Set of values in the domain that have not been verified to work yet
+        unverified_domain = {val for val in assignment[i]}
+
+        # todo; Optimize bu looping through the domain values when |domain[i]|*|domain[j]| < constraints[i][j]
+        # Run through constraints and find which values are possible
+        for i_val, j_val in self.constraints[i][j]:
+            if i_val in unverified_domain and j_val in assignment[j]:
+                unverified_domain.remove(i_val)
+
+        # Evaluate where there are impossible values, and remove them if there are
+        if unverified_domain:
+            assignment[i] = [val for val in assignment[i] if not (val in unverified_domain)]
+            return True
+        else:
+            return False
 
 
 def create_map_coloring_csp():
@@ -148,11 +251,11 @@ def create_map_coloring_csp():
     develop your code.
     """
     csp = CSP()
-    states = ['WA', 'NT', 'Q', 'NSW', 'V', 'SA', 'T']
-    edges = {'SA': ['WA', 'NT', 'Q', 'NSW', 'V'], 'NT': ['WA', 'Q'], 'NSW': ['Q', 'V']}
+    states = ['WA', 'NT', 'Q', 'NSW', 'V', 'SA', 'T', "ML"]
+    edges = {'SA': ['WA', 'NT', 'Q', 'NSW', 'V'], 'NT': ['WA', 'Q'], 'NSW': ['Q', 'V', "ML"]}
     colors = ['red', 'green', 'blue']
     for state in states:
-        csp.add_variable(state, colors)
+        csp.add_variable(state, colors if state != "ML" else ["green"])
     for state, other_states in edges.items():
         for other_state in other_states:
             csp.add_constraint_one_way(state, other_state, lambda i, j: i != j)
@@ -196,9 +299,27 @@ def print_sudoku_solution(solution):
     """
     for row in range(9):
         for col in range(9):
-            print(solution['%d-%d' % (row, col)][0]),
+            print(f" {solution['%d-%d' % (row, col)][0]} ", end="")
             if col == 2 or col == 5:
-                print('|'),
+                print('|', end="")
         print("")
         if row == 2 or row == 5:
-            print('------+-------+------')
+            print('---------+---------+---------')
+
+
+if __name__ == "__main__":
+    sudoku = True
+    if sudoku:
+        csp = create_sudoku_csp("hard.txt")
+        solution = csp.backtracking_search()
+        if solution:
+            print_sudoku_solution(solution)
+        else:
+            print("Unable to solve")
+    else:
+        csp = create_map_coloring_csp()
+        solution = csp.backtracking_search()
+        if solution:
+            print(solution)
+        else:
+            print("Unable to solve")
