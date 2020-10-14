@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 
-class NoUnassignedVariablesError(Exception):
+class NoUnassignedVariables(Exception):
     """No variables unassigned"""
 
 
 @dataclass
-class functionLog:
+class FunctionLog:
     calls: int = 0
     failures: int = 0
 
@@ -23,7 +23,7 @@ def log_function(func):
 
     As specified in the assignment text."""
     global _function_logs
-    _function_logs[func.__name__] = functionLog(0, 0)
+    _function_logs[func.__name__] = FunctionLog(0, 0)
 
     @wraps(func)
     def logging(*args, **kwargs):
@@ -95,7 +95,10 @@ class CSP:
 
         # Next, filter this list of value pairs through the function
         # 'filter_function', so that only the legal value pairs remain
-        self.constraints[i][j] = list(filter(lambda value_pair: filter_function(*value_pair), self.constraints[i][j]))
+        self.constraints[i][j] = list(filter(
+            lambda value_pair: filter_function(*value_pair),  # filter_function = lambda values: values[0] != values[1]
+            self.constraints[i][j]
+        ))
 
     def add_all_different_constraint(self, variables):
         """Add an Alldiff constraint between all of the variables in the
@@ -153,7 +156,7 @@ class CSP:
         # If there are no unassigned variables, we have solved the CSP :D
         try:
             var = self.select_unassigned_variable(assignment)
-        except NoUnassignedVariablesError:
+        except NoUnassignedVariables:
             return assignment
 
         for val in self.order_domain_values(var, assignment):
@@ -203,7 +206,7 @@ class CSP:
 
     @staticmethod
     def order_domain_values(var, assignment: Dict[any, list]):
-        return assignment[var]
+        return reversed(assignment[var])
 
     @staticmethod
     def select_unassigned_variable(assignment: Dict[any, list]):
@@ -221,7 +224,7 @@ class CSP:
                 low_score, low_var = len(assignment[var]), var
 
         if low_score == float("inf"):
-            raise NoUnassignedVariablesError(
+            raise NoUnassignedVariables(
                 f"No variable with |domain|>1 found in the total of {len(assignment)} variables"
             )
 
@@ -245,7 +248,8 @@ class CSP:
                     return False
 
                 for neighbor in self.constraints[i].keys():
-                    queue.append((neighbor, i))
+                    if neighbor is not j:
+                        queue.append((neighbor, i))
 
         return True
 
@@ -334,16 +338,16 @@ def print_sudoku_solution(solution):
             print(f" {solution['%d-%d' % (row, col)][0]} ", end="")
             if col == 2 or col == 5:
                 print('|', end="")
-        print("")
+        print(r"")
         if row == 2 or row == 5:
-            print('---------+---------+---------')
+            print(r' -  -  - + -  -  - + -  -  - ')
 
 
-if __name__ == "__main__":
-    for sudoku in ["easy.txt", "medium.txt", "hard.txt", "veryhard.txt"]:
-        print("Solving sudoku", sudoku)
+def solve_case(sudoku_filename=None):
+    if sudoku_filename:
+        print("Solving sudoku", sudoku_filename)
 
-        csp = create_sudoku_csp(sudoku)
+        csp = create_sudoku_csp(sudoku_filename)
         solution = csp.backtracking_search()
 
         if solution:
@@ -351,12 +355,7 @@ if __name__ == "__main__":
         else:
             print("Unable to solve")
 
-        print(f"Backtrack called {_function_logs[csp.backtrack.__name__].calls} times, "
-              f"failed {_function_logs[csp.backtrack.__name__].failures} times.\n")
-        _function_logs[csp.backtrack.__name__] = functionLog(0, 0)
-
-    solve_custom_map_coloring = True
-    if solve_custom_map_coloring:
+    else:
         print("Solving custom map coloring")
 
         csp = create_map_coloring_csp()
@@ -367,8 +366,20 @@ if __name__ == "__main__":
         else:
             print("Unable to solve")
 
-        print(f"Backtrack called {_function_logs[csp.backtrack.__name__].calls} times, "
-              f"failed {_function_logs[csp.backtrack.__name__].failures} times.")
-        _function_logs[csp.backtrack.__name__] = functionLog(0, 0)
+    print(f"Backtrack called {_function_logs[csp.backtrack.__name__].calls} times, "
+          f"failed {_function_logs[csp.backtrack.__name__].failures} times.")
+    _function_logs[csp.backtrack.__name__] = FunctionLog(0, 0)
 
+
+def main():
+    for sudoku in ["easy.txt", "medium.txt", "hard.txt", "veryhard.txt"]:
+        solve_case(sudoku)
+        print()
+    solve_custom_map_coloring = True
+    if solve_custom_map_coloring:
+        solve_case()
+
+
+if __name__ == "__main__":
+    main()
 
