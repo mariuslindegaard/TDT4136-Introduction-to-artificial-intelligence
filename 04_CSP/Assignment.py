@@ -127,7 +127,7 @@ class CSP:
         return self.backtrack(assignment)
 
     @log_function
-    def backtrack(self, assignment: Dict[any, set]) -> Dict[any, list]:
+    def backtrack(self, assignment: Dict[any, set]) -> Dict[any, set]:
         """The function 'Backtrack' from the pseudocode in the
         textbook.
 
@@ -206,7 +206,7 @@ class CSP:
 
     @staticmethod
     def order_domain_values(var, assignment: Dict[any, set]):
-        return assignment[var]
+        return sorted(assignment[var])
 
     @staticmethod
     def select_unassigned_variable(assignment: Dict[any, set]):
@@ -248,7 +248,7 @@ class CSP:
                     return False
 
                 for neighbor in self.constraints[i].keys():
-                    if neighbor is not j:
+                    if neighbor is not j:  # and (neighbor, i) not in queue:  <-- takes twice the time
                         queue.append((neighbor, i))
 
         return True
@@ -275,7 +275,7 @@ class CSP:
 
         # Evaluate where there are impossible values, and remove them if there are
         if unverified_domain:
-            assignment[i] = {val for val in assignment[i] if not (val in unverified_domain)}
+            assignment[i] -= unverified_domain
             return True
         else:
             return False
