@@ -206,7 +206,7 @@ class CSP:
 
     @staticmethod
     def order_domain_values(var, assignment: Dict[any, set]):
-        return sorted(assignment[var])
+        return assignment[var]
 
     @staticmethod
     def select_unassigned_variable(assignment: Dict[any, set]):
@@ -248,7 +248,7 @@ class CSP:
                     return False
 
                 for neighbor in self.constraints[i].keys():
-                    if neighbor is not j:  # and (neighbor, i) not in queue:  <-- takes twice the time
+                    if neighbor is not j:  # and (neighbor, i) not in queue:  # <-- takes twice the time (because queue)
                         queue.append((neighbor, i))
 
         return True
@@ -373,7 +373,7 @@ def solve_case(sudoku_filename=None):
 
 
 def main():
-    for sudoku in ["easy.txt", "medium.txt", "hard.txt", "veryhard.txt"]:
+    for sudoku in ["easy.txt", "medium.txt", "hard.txt", "veryhard.txt", "extreme.txt"]:
         solve_case(sudoku)
         print()
     solve_custom_map_coloring = True
