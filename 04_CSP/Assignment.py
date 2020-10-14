@@ -1,12 +1,42 @@
 import copy
 import itertools
 import collections
+from functools import wraps
+from dataclasses import dataclass
 
 from typing import Dict, List
 
 
 class NoUnassignedVariablesError(Exception):
     """No variables unassigned"""
+
+
+@dataclass
+class functionLog:
+    calls: int = 0
+    failures: int = 0
+
+
+_function_logs = {}
+def log_function(func):
+    """Wrapper for backtracking function logging times called an failures
+
+    As specified in the assignment text."""
+    global _function_logs
+    _function_logs[func.__name__] = functionLog(0, 0)
+
+    @wraps(func)
+    def logging(*args, **kwargs):
+        _function_logs[func.__name__].calls += 1
+
+        ret = func(*args, **kwargs)
+
+        if not bool(ret):
+            _function_logs[func.__name__].failures += 1
+
+        return ret
+
+    return logging
 
 
 class CSP:
@@ -29,7 +59,8 @@ class CSP:
         self.domains[name] = list(domain)
         self.constraints[name] = {}
 
-    def get_all_possible_pairs(self, a, b):
+    @staticmethod
+    def get_all_possible_pairs(a, b):
         """Get a list of all possible pairs (as tuples) of the values in
         the lists 'a' and 'b', where the first component comes from list
         'a' and the second component comes from list 'b'.
@@ -92,6 +123,7 @@ class CSP:
         # Call backtrack with the partial assignment 'assignment'
         return self.backtrack(assignment)
 
+    @log_function
     def backtrack(self, assignment: Dict[any, list]) -> Dict[any, list]:
         """The function 'Backtrack' from the pseudocode in the
         textbook.
@@ -169,12 +201,12 @@ class CSP:
         """
         return True
 
-
     @staticmethod
     def order_domain_values(var, assignment: Dict[any, list]):
         return assignment[var]
 
-    def select_unassigned_variable(self, assignment: Dict[any, list]):
+    @staticmethod
+    def select_unassigned_variable(assignment: Dict[any, list]):
         """The function 'Select-Unassigned-Variable' from the pseudocode
         in the textbook. Should return the name of one of the variables
         in 'assignment' that have not yet been decided, i.e. whose list
@@ -255,7 +287,7 @@ def create_map_coloring_csp():
     edges = {'SA': ['WA', 'NT', 'Q', 'NSW', 'V'], 'NT': ['WA', 'Q'], 'NSW': ['Q', 'V', "ML"]}
     colors = ['red', 'green', 'blue']
     for state in states:
-        csp.add_variable(state, colors if state != "ML" else ["green"])
+        csp.add_variable(state, colors if state != "ML" else ["red"])
     for state, other_states in edges.items():
         for other_state in other_states:
             csp.add_constraint_one_way(state, other_state, lambda i, j: i != j)
@@ -308,18 +340,35 @@ def print_sudoku_solution(solution):
 
 
 if __name__ == "__main__":
-    sudoku = True
-    if sudoku:
-        csp = create_sudoku_csp("hard.txt")
+    for sudoku in ["easy.txt", "medium.txt", "hard.txt", "veryhard.txt"]:
+        print("Solving sudoku", sudoku)
+
+        csp = create_sudoku_csp(sudoku)
         solution = csp.backtracking_search()
+
         if solution:
             print_sudoku_solution(solution)
         else:
             print("Unable to solve")
-    else:
+
+        print(f"Backtrack called {_function_logs[csp.backtrack.__name__].calls} times, "
+              f"failed {_function_logs[csp.backtrack.__name__].failures} times.\n")
+        _function_logs[csp.backtrack.__name__] = functionLog(0, 0)
+
+    solve_custom_map_coloring = True
+    if solve_custom_map_coloring:
+        print("Solving custom map coloring")
+
         csp = create_map_coloring_csp()
         solution = csp.backtracking_search()
+
         if solution:
             print(solution)
         else:
             print("Unable to solve")
+
+        print(f"Backtrack called {_function_logs[csp.backtrack.__name__].calls} times, "
+              f"failed {_function_logs[csp.backtrack.__name__].failures} times.")
+        _function_logs[csp.backtrack.__name__] = functionLog(0, 0)
+
+
