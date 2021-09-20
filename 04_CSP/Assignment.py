@@ -206,7 +206,7 @@ class CSP:
 
     @staticmethod
     def order_domain_values(var, assignment: Dict[any, set]):
-        return assignment[var]
+        return sorted(assignment[var])
 
     @staticmethod
     def select_unassigned_variable(assignment: Dict[any, set]):
